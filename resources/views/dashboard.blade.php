@@ -26,7 +26,7 @@
             transition: all 0.3s;
         }
         .sidebar h4 {
-            color: #000000; /* Changed to black for visibility against white background */
+            color: #000000;
             background-color: #FFFFFF;
             text-align: center;
             margin-bottom: 30px;
@@ -108,6 +108,8 @@
                 </table>
             </div>
         </div>
+        <!-- Message Container -->
+        <div id="message-container" class="alert alert-info" style="display: none; position: fixed; top: 20px; right: 20px; z-index: 1000; max-width: 300px;"></div>
     </div>
 
     <!-- Create User Modal -->
@@ -258,6 +260,17 @@
     <script>
         $(document).ready(function() {
             var table;
+            var isSuperAdmin = "{{ Auth::user()->admin_type }}" === "SuperAdmin"; // Blade variable check
+
+            function showMessage(message, type = 'info', duration = 3000) {
+                const messageContainer = $('#message-container');
+                messageContainer
+                    .removeClass('alert-success alert-danger alert-info')
+                    .addClass(`alert-${type}`)
+                    .text(message)
+                    .show();
+                setTimeout(() => messageContainer.hide(), duration);
+            }
 
             // Load Users table on click
             $('.users-link').on('click', function(e) {
@@ -272,8 +285,11 @@
                             {
                                 data: null,
                                 render: function(data, type, row) {
-                                    return '<button class="btn btn-sm btn-warning edit-user" data-id="' + row.id + '" data-bs-toggle="modal" data-bs-target="#editUserModal">Edit</button> ' +
-                                           '<button class="btn btn-sm btn-danger delete-user" data-id="' + row.id + '" style="background-color: #E74C3C; border-color: #E74C3C;">Delete</button>';
+                                    var actions = '<button class="btn btn-sm btn-warning edit-user" data-id="' + row.id + '" data-bs-toggle="modal" data-bs-target="#editUserModal">Edit</button>';
+                                    if (isSuperAdmin) {
+                                        actions += ' <button class="btn btn-sm btn-danger delete-user" data-id="' + row.id + '" style="background-color: #E74C3C; border-color: #E74C3C;">Delete</button>';
+                                    }
+                                    return actions;
                                 }
                             },
                             { data: 'id' },
@@ -310,7 +326,7 @@
                 e.preventDefault();
                 var formData = $(this).serialize() + '&_token={{ csrf_token() }}';
                 var password = $('#create_password').val();
-                $('#create_error').hide().text(''); // Reset error before submission
+                $('#create_error').hide().text('');
 
                 if (password && password.length < 8) {
                     $('#create_error').text('Password must be at least 8 characters.').show();
@@ -325,7 +341,7 @@
                         if (response.success) {
                             $('#createUserModal').modal('hide');
                             table.ajax.reload();
-                            setTimeout(() => alert(response.message), 100);
+                            showMessage(response.message, 'success');
                         }
                     },
                     error: function(xhr) {
@@ -353,7 +369,7 @@
                         $('#edit_date_of_joined').val(data.date_of_joined);
                         $('#edit_is_active').val(data.is_active ? '1' : '0');
                         $('#edit_admin_type').val(data.admin_type);
-                        $('#edit_error').hide().text(''); // Reset error on form load
+                        $('#edit_error').hide().text('');
                     },
                     error: function(xhr) {
                         $('#edit_error').text(xhr.responseJSON.message || 'An error occurred.').show();
@@ -367,7 +383,7 @@
                 var formData = $(this).serialize() + '&_token={{ csrf_token() }}&_method=PUT';
                 var id = $('#edit_id').val();
                 var password = $('#edit_password').val();
-                $('#edit_error').hide().text(''); // Reset error before submission
+                $('#edit_error').hide().text('');
 
                 if (password && password.length < 8) {
                     $('#edit_error').text('Password must be at least 8 characters.').show();
@@ -384,7 +400,7 @@
                         if (response.success) {
                             $('#editUserModal').modal('hide');
                             table.ajax.reload();
-                            alert(response.message);
+                            showMessage(response.message, 'success');
                         }
                     },
                     error: function(xhr) {
@@ -400,6 +416,10 @@
 
             // Delete User
             $(document).on('click', '.delete-user', function() {
+                if (!isSuperAdmin) {
+                    showMessage('Only SuperAdmin can delete users.', 'danger');
+                    return;
+                }
                 if (confirm('Are you sure you want to delete this user?')) {
                     var id = $(this).data('id');
                     $.ajax({
@@ -409,11 +429,11 @@
                         success: function(response) {
                             if (response.success) {
                                 table.ajax.reload();
-                                alert(response.message);
+                                showMessage(response.message, 'success');
                             }
                         },
                         error: function(xhr) {
-                            alert(xhr.responseJSON.message || 'An error occurred.');
+                            showMessage(xhr.responseJSON.message || 'An error occurred.', 'danger');
                         }
                     });
                 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
@@ -77,21 +78,14 @@ class UserController extends Controller
     }
 
     public function destroy($id)
-    {
-        $user = User::findOrFail($id);
-        $user->delete();
-
-        return response()->json(['success' => true, 'message' => 'User deleted successfully']);
+{
+    if (Auth::user()->admin_type !== 'SuperAdmin') {
+        return response()->json(['message' => 'Only SuperAdmin can delete users.'], 403);
     }
+    $user = User::findOrFail($id);
+    $user->delete();
+    return response()->json(['success' => true, 'message' => 'User deleted successfully']);
+}
 
-//     // In UserController constructor
-// public function __construct()
-// {
-//     $this->middleware(function ($request, $next) {
-//         if (auth()->user()->admin_type !== 'SuperAdmin') {
-//             abort(403, 'Unauthorized action.');
-//         }
-//         return $next($request);
-//     })->only(['store', 'update', 'destroy']);
-// }
+
 }
