@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simpliaxis HRMS - Dashboard</title>
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <style>
@@ -84,15 +83,19 @@
 
     <div class="content">
         <div id="main-content">
-            <!-- Add Employee Button -->
-            <button class="btn btn-primary add-btn" data-bs-toggle="modal" data-bs-target="#createUserModal" style="background-color: #3498DB; border-color: #3498DB;">Add Employee</button>
+            <!-- Add Employee Button (hidden for Employee) -->
+            @if(Auth::user()->admin_type !== 'Employee')
+                <button class="btn btn-primary add-btn" data-bs-toggle="modal" data-bs-target="#createUserModal" style="background-color: #3498DB; border-color: #3498DB;">Add Employee</button>
+            @endif
 
-            <!-- User table will load here -->
-            <div id="users-table" class="table-responsive" style="display: none;">
+            <!-- User table will load here (visible for all) -->
+            <div id="users-table" class="table-responsive">
                 <table id="usersTable" class="table table-striped">
                     <thead>
                         <tr>
-                            <th>Actions</th>
+                            @if(Auth::user()->admin_type !== 'Employee')
+                                <th>Actions</th>
+                            @endif
                             <th>ID</th>
                             <th>Name</th>
                             <th>Email</th>
@@ -253,6 +256,25 @@
         </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteConfirmModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete this user? This action cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn" style="background-color: #E74C3C; border-color: #E74C3C;">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
@@ -260,7 +282,8 @@
     <script>
         $(document).ready(function() {
             var table;
-            var isSuperAdmin = "{{ Auth::user()->admin_type }}" === "SuperAdmin"; // Blade variable check
+            var userRole = "{{ Auth::user()->admin_type }}"; // Get user role
+            var isAdminOrSuperAdmin = userRole === "SuperAdmin" || userRole === "Admin"; // Check for delete privilege
 
             function showMessage(message, type = 'info', duration = 3000) {
                 const messageContainer = $('#message-container');
@@ -276,32 +299,43 @@
             $('.users-link').on('click', function(e) {
                 e.preventDefault();
                 $('#main-content > div').hide();
-                $('#users-table').show();
+                $('#users-table').show(); // Ensure table is visible for all
 
                 if (!table) {
+                    let columns = [];
+
+                    if (isAdminOrSuperAdmin) {
+                        columns.push({
+                            data: null,
+                            render: function(data, type, row) {
+                                return `
+                                    <button class="btn btn-sm btn-warning edit-user" data-id="${row.id}" data-bs-toggle="modal" data-bs-target="#editUserModal">Edit</button>
+                                    <button class="btn btn-sm btn-danger delete-user" data-id="${row.id}" style="background-color: #E74C3C; border-color: #E74C3C;" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal">Delete</button>
+                                `;
+                            }
+                        });
+                    }
+
+                    // Push all common columns (for everyone)
+                    columns = columns.concat([
+                        { data: 'id' },
+                        { data: 'name' },
+                        { data: 'email' },
+                        { data: 'phone_no' },
+                        { data: 'department' },
+                        { data: 'role' },
+                        { data: 'date_of_joined' },
+                        { data: 'is_active', render: function(data) { return data ? 'Active' : 'Inactive'; } },
+                        { data: 'admin_type' }
+                    ]);
+
+                    // Initialize the table
                     table = $('#usersTable').DataTable({
-                        ajax: '{{ route("users.data") }}',
-                        columns: [
-                            {
-                                data: null,
-                                render: function(data, type, row) {
-                                    var actions = '<button class="btn btn-sm btn-warning edit-user" data-id="' + row.id + '" data-bs-toggle="modal" data-bs-target="#editUserModal">Edit</button>';
-                                    if (isSuperAdmin) {
-                                        actions += ' <button class="btn btn-sm btn-danger delete-user" data-id="' + row.id + '" style="background-color: #E74C3C; border-color: #E74C3C;">Delete</button>';
-                                    }
-                                    return actions;
-                                }
-                            },
-                            { data: 'id' },
-                            { data: 'name' },
-                            { data: 'email' },
-                            { data: 'phone_no' },
-                            { data: 'department' },
-                            { data: 'role' },
-                            { data: 'date_of_joined' },
-                            { data: 'is_active', render: function(data) { return data ? 'Active' : 'Inactive'; } },
-                            { data: 'admin_type' }
-                        ],
+                        ajax: {
+                            url: '{{ route("users.data") }}',
+                            dataSrc: ''
+                        },
+                        columns: columns,
                         pageLength: 10,
                         order: [[0, 'asc']]
                     });
@@ -313,7 +347,7 @@
                 $(this).addClass('active');
             });
 
-            // Initialize table on page load
+            // Initialize table on page load for all users
             $('.users-link').click();
 
             // Show event for modals to reset error state
@@ -323,35 +357,57 @@
 
             // Create User
             $('#createUserForm').on('submit', function(e) {
-                e.preventDefault();
-                var formData = $(this).serialize() + '&_token={{ csrf_token() }}';
-                var password = $('#create_password').val();
-                $('#create_error').hide().text('');
+    e.preventDefault();
+    $('#create_error').hide().text('');
 
-                if (password && password.length < 8) {
-                    $('#create_error').text('Password must be at least 8 characters.').show();
-                    return;
-                }
+    const email = $('#create_email').val();
+    const phone = $('#create_phone_no').val();
+    const name = $('#create_name').val();
+    const password = $('#create_password').val();
 
-                $.ajax({
-                    url: '{{ route("users.store") }}',
-                    method: 'POST',
-                    data: formData,
-                    success: function(response) {
-                        if (response.success) {
-                            $('#createUserModal').modal('hide');
-                            table.ajax.reload();
-                            showMessage(response.message, 'success');
-                        }
-                    },
-                    error: function(xhr) {
-                        $('#create_error').text(xhr.responseJSON.message || 'An error occurred.').show();
-                        if (xhr.responseJSON.errors && xhr.responseJSON.errors.password) {
-                            $('#create_error').text(xhr.responseJSON.errors.password[0]).show();
-                        }
-                    }
-                });
-            });
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phonePattern = /^\d{10}$/;
+    const namePattern = /^[a-zA-Z\s]+$/;
+
+    if (!namePattern.test(name)) {
+        $('#create_error').text('Name must contain only letters and spaces.').show();
+        return;
+    }
+
+    if (!emailPattern.test(email)) {
+        $('#create_error').text('Invalid email format.').show();
+        return;
+    }
+
+    if (!phonePattern.test(phone)) {
+        $('#create_error').text('Phone number must be exactly 10 digits.').show();
+        return;
+    }
+
+    if (password.length < 8) {
+        $('#create_error').text('Password must be at least 8 characters.').show();
+        return;
+    }
+
+    const formData = $(this).serialize() + '&_token={{ csrf_token() }}';
+
+    $.ajax({
+        url: '{{ route("users.store") }}',
+        method: 'POST',
+        data: formData,
+        success: function(response) {
+            if (response.success) {
+                $('#createUserModal').modal('hide');
+                table.ajax.reload();
+                showMessage(response.message, 'success');
+            }
+        },
+        error: function(xhr) {
+            $('#create_error').text(xhr.responseJSON.message || 'An error occurred.').show();
+        }
+    });
+});
+
 
             // Edit User - Populate Form
             $(document).on('click', '.edit-user', function() {
@@ -378,65 +434,93 @@
             });
 
             // Update User
-            $('#editUserForm').on('submit', function(e) {
-                e.preventDefault();
-                var formData = $(this).serialize() + '&_token={{ csrf_token() }}&_method=PUT';
-                var id = $('#edit_id').val();
-                var password = $('#edit_password').val();
-                $('#edit_error').hide().text('');
+           $('#editUserForm').on('submit', function(e) {
+    e.preventDefault();
+    $('#edit_error').hide().text('');
 
-                if (password && password.length < 8) {
-                    $('#edit_error').text('Password must be at least 8 characters.').show();
+    const email = $('#edit_email').val();
+    const phone = $('#edit_phone_no').val();
+    const name = $('#edit_name').val();
+    const password = $('#edit_password').val();
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phonePattern = /^\d{10}$/;
+    const namePattern = /^[a-zA-Z\s]+$/;
+
+    if (!namePattern.test(name)) {
+        $('#edit_error').text('Name must contain only letters and spaces.').show();
+        return;
+    }
+
+    if (!emailPattern.test(email)) {
+        $('#edit_error').text('Invalid email format.').show();
+        return;
+    }
+
+    if (!phonePattern.test(phone)) {
+        $('#edit_error').text('Phone number must be exactly 10 digits.').show();
+        return;
+    }
+
+    if (password && password.length < 8) {
+        $('#edit_error').text('Password must be at least 8 characters.').show();
+        return;
+    }
+
+    let formData = $(this).serialize() + '&_token={{ csrf_token() }}&_method=PUT';
+    if (!password) {
+        formData = formData.replace(/&password=[^&]*/g, '');
+    }
+
+    const id = $('#edit_id').val();
+
+    $.ajax({
+        url: '{{ url("users") }}/' + id,
+        method: 'PUT',
+        data: formData,
+        success: function(response) {
+            if (response.success) {
+                $('#editUserModal').modal('hide');
+                table.ajax.reload();
+                showMessage(response.message, 'success');
+            }
+        },
+        error: function(xhr) {
+            $('#edit_error').text(xhr.responseJSON.message || 'An error occurred.').show();
+        }
+    });
+});
+
+
+            // Delete Confirmation and Action
+            $(document).on('click', '.delete-user', function() {
+                if (!isAdminOrSuperAdmin) {
+                    showMessage('Only Admin or SuperAdmin can delete users.', 'danger');
                     return;
-                } else if (!password) {
-                    formData = formData.replace(/&password=[^&]*/g, '');
                 }
+                var userId = $(this).data('id');
+                $('#confirmDeleteBtn').data('id', userId); // Store the user ID in the confirm button
+                $('#deleteConfirmModal').modal('show'); // Show the modal
+            });
 
+            $('#confirmDeleteBtn').on('click', function() {
+                var userId = $(this).data('id');
                 $.ajax({
-                    url: '{{ url("users") }}/' + id,
-                    method: 'PUT',
-                    data: formData,
+                    url: '{{ url("users") }}/' + userId,
+                    method: 'DELETE',
+                    data: { _token: '{{ csrf_token() }}' },
                     success: function(response) {
                         if (response.success) {
-                            $('#editUserModal').modal('hide');
+                            $('#deleteConfirmModal').modal('hide');
                             table.ajax.reload();
                             showMessage(response.message, 'success');
                         }
                     },
                     error: function(xhr) {
-                        var errorMessage = xhr.responseJSON.message || 'An error occurred.';
-                        if (xhr.responseJSON.errors && xhr.responseJSON.errors.password) {
-                            $('#edit_error').text(xhr.responseJSON.errors.password[0]).show();
-                        } else {
-                            $('#edit_error').text(errorMessage).show();
-                        }
+                        showMessage(xhr.responseJSON.message || 'An error occurred.', 'danger');
+                        $('#deleteConfirmModal').modal('hide');
                     }
                 });
-            });
-
-            // Delete User
-            $(document).on('click', '.delete-user', function() {
-                if (!isSuperAdmin) {
-                    showMessage('Only SuperAdmin can delete users.', 'danger');
-                    return;
-                }
-                if (confirm('Are you sure you want to delete this user?')) {
-                    var id = $(this).data('id');
-                    $.ajax({
-                        url: '{{ url("users") }}/' + id,
-                        method: 'DELETE',
-                        data: { _token: '{{ csrf_token() }}' },
-                        success: function(response) {
-                            if (response.success) {
-                                table.ajax.reload();
-                                showMessage(response.message, 'success');
-                            }
-                        },
-                        error: function(xhr) {
-                            showMessage(xhr.responseJSON.message || 'An error occurred.', 'danger');
-                        }
-                    });
-                }
             });
         });
     </script>

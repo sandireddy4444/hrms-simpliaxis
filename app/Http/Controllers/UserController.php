@@ -16,7 +16,7 @@ class UserController extends Controller
     public function data()
     {
         $users = User::all();
-        return response()->json(['data' => $users]);
+        return response()->json($users); // Return raw array instead of ['data' => $users]
     }
 
     public function create()
@@ -78,14 +78,12 @@ class UserController extends Controller
     }
 
     public function destroy($id)
-{
-    if (Auth::user()->admin_type !== 'SuperAdmin') {
-        return response()->json(['message' => 'Only SuperAdmin can delete users.'], 403);
+    {
+        if (!in_array(Auth::user()->admin_type, ['SuperAdmin', 'Admin'])) {
+            return response()->json(['message' => 'Only Admin or SuperAdmin can delete users.'], 403);
+        }
+        $user = User::findOrFail($id);
+        $user->delete();
+        return response()->json(['success' => true, 'message' => 'User deleted successfully']);
     }
-    $user = User::findOrFail($id);
-    $user->delete();
-    return response()->json(['success' => true, 'message' => 'User deleted successfully']);
-}
-
-
 }
