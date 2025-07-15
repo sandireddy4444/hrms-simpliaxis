@@ -1,4 +1,4 @@
-```html
+
 <div class="sidebar">
     <h4 class="mb-4">Simpliaxis HRMS</h4>
     <a href="#" class="users-link active">Users</a>
@@ -47,4 +47,3 @@
         }
     </style>
 </div>
-```
