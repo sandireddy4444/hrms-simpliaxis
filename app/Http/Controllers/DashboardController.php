@@ -9,6 +9,6 @@ class DashboardController extends Controller
     public function index()
     {
         $users = User::all();
-        return view('dashboard', compact('users'));
+        return view('dashboard.index', compact('users'));
     }
 }

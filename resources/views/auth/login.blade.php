@@ -30,7 +30,7 @@
 </head>
 <body>
     <div class="login-container">
-        <h3 class="text-center mb-4" style="background-color: #fc544b;; padding: 10px; border-radius: 5px;">Simpliaxis HRMS Login</h3>
+        <h3 class="text-center mb-4" style="background-color: #fc544b; padding: 10px; border-radius: 5px;">Simpliaxis HRMS Login</h3>
         <form id="loginForm">
             <div class="mb-3">
                 <label for="email" class="form-label">Email</label>

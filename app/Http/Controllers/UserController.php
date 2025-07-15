@@ -10,13 +10,13 @@ class UserController extends Controller
 {
     public function index()
     {
-        return view('dashboard');
+        return view('dashboard.index');
     }
 
     public function data()
     {
         $users = User::all();
-        return response()->json($users); // Return raw array instead of ['data' => $users]
+        return response()->json($users);
     }
 
     public function create()
