@@ -1,9 +1,11 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Mail\NewEmployeeMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
@@ -35,11 +37,22 @@ class UserController extends Controller
             'role' => 'required|string|max:255',
             'date_of_joined' => 'required|date',
             'is_active' => 'required|boolean',
-            'admin_type' => 'required|in:Admin,SuperAdmin,Employee',
+            'admin_type' => 'required|in:Admin,SuperAdmin,Employee,HR Manager,Department Manager',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
-        User::create($validated);
+        $user = User::create($validated);
+
+        // Send welcome email to the new employee
+        $creatorName = Auth::user()->name;
+        $employeeData = [
+            'name' => $user->name,
+            'phone_no' => $user->phone_no,
+            'email' => $user->email,
+            'password' => $request->input('password'), // Plain text password for initial setup
+            'role' => $user->role,
+        ];
+        Mail::to($user->email)->send(new NewEmployeeMail($employeeData, $creatorName));
 
         return response()->json(['success' => true, 'message' => 'User created successfully']);
     }
@@ -62,7 +75,7 @@ class UserController extends Controller
             'role' => 'required|string|max:255',
             'date_of_joined' => 'required|date',
             'is_active' => 'required|boolean',
-            'admin_type' => 'required|in:Admin,SuperAdmin,Employee',
+            'admin_type' => 'required|in:Admin,SuperAdmin,Employee,HR Manager,Department Manager',
             'password' => 'nullable|string|min:8',
         ]);
 
@@ -79,8 +92,8 @@ class UserController extends Controller
 
     public function destroy($id)
     {
-        if (!in_array(Auth::user()->admin_type, ['SuperAdmin', 'Admin'])) {
-            return response()->json(['message' => 'Only Admin or SuperAdmin can delete users.'], 403);
+        if (!in_array(Auth::user()->admin_type, ['SuperAdmin', 'Admin', 'HR Manager', 'Department Manager'])) {
+            return response()->json(['message' => 'Only Admin, SuperAdmin, HR Manager, or Department Manager can delete users.'], 403);
         }
         $user = User::findOrFail($id);
         $user->delete();
