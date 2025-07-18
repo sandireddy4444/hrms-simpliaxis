@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -43,4 +42,3 @@
     @yield('scripts')
 </body>
 </html>
-```

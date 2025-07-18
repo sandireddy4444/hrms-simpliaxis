@@ -5,7 +5,7 @@
     <div class="content">
         <div id="main-content">
             <!-- Add Employee Button (hidden for Employee) -->
-            @if(Auth::user()->admin_type !== 'Employee')
+            @if(in_array(Auth::user()->admin_type, ['Admin', 'SuperAdmin', 'HR Manager', 'Department Manager']))
                 <button class="btn btn-primary add-btn" data-bs-toggle="modal" data-bs-target="#createUserModal" style="background-color: #3498DB; border-color: #3498DB;">Add Employee</button>
             @endif
 
@@ -14,7 +14,7 @@
                 <table id="usersTable" class="table table-striped">
                     <thead>
                         <tr>
-                            @if(Auth::user()->admin_type !== 'Employee')
+                            @if(in_array(Auth::user()->admin_type, ['Admin', 'SuperAdmin', 'HR Manager', 'Department Manager']))
                                 <th>Actions</th>
                             @endif
                             <th>ID</th>
@@ -49,7 +49,7 @@
         $(document).ready(function() {
             var table;
             var userRole = "{{ Auth::user()->admin_type }}";
-            var isAdminOrSuperAdmin = userRole === "SuperAdmin" || userRole === "Admin";
+            var isAdminOrSuperAdmin = ['SuperAdmin', 'Admin', 'HR Manager', 'Department Manager'].includes(userRole);
 
             function showMessage(message, type = 'info', duration = 3000) {
                 const messageContainer = $('#message-container');
@@ -250,7 +250,7 @@
 
             $(document).on('click', '.delete-user', function() {
                 if (!isAdminOrSuperAdmin) {
-                    showMessage('Only Admin or SuperAdmin can delete users.', 'danger');
+                    showMessage('Only Admin, SuperAdmin, HR Manager, or Department Manager can delete users.', 'danger');
                     return;
                 }
                 var userId = $(this).data('id');
