@@ -1,12 +1,8 @@
-
 <?php
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AttendanceController;
-use App\Mail\ShiftHoursNotification;
-use Illuminate\Support\Facades\Mail;
-
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -14,7 +10,7 @@ Route::get('/', function () {
 
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
-Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout'); // Changed to POST
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [UserController::class, 'index'])->name('dashboard');
@@ -25,32 +21,6 @@ Route::middleware('auth')->group(function () {
     Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
 
-});
-
-
-
-
-
-
-    // Shows report + mark links
-    
-  
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These routes
-| are loaded by the RouteServiceProvider within a group which contains the
-| "web" middleware group.
-|
-*/
-
-Route::middleware(['auth'])->group(function () {
     Route::get('/attendance', [AttendanceController::class, 'create'])->name('attendance.create');
     Route::get('/attendance/dashboard', [AttendanceController::class, 'dashboardView'])->name('attendance.dashboard');
     Route::get('/attendance/dashboard/data', [AttendanceController::class, 'dashboardData'])->name('attendance.dashboard.data');
@@ -60,4 +30,3 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut'])->name('attendance.checkout');
     Route::post('/attendance/send-notification/{id}', [AttendanceController::class, 'sendNotification'])->name('attendance.sendNotification');
 });
-

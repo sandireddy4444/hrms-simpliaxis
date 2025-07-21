@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Simpliaxis HRMS - @yield('title')</title>
+
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+
     <style>
         body {
             margin: 0;
@@ -33,14 +36,19 @@
             margin-bottom: 15px;
         }
     </style>
+
+    @yield('styles')
 </head>
 <body>
     @include('layouts.sidebar')
-    
-    @yield('content')
+
+    <div class="content">
+        <h2 class="mb-4">@yield('title')</h2>
+        @yield('content')
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     @yield('scripts')
-    
 </body>
 </html>
