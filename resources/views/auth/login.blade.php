@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Simpliaxis HRMS - Login</title>
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+  
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -32,7 +32,8 @@
 <body>
     <div class="login-container">
         <h3 class="text-center mb-4" style="background-color: #fc544b; padding: 10px; border-radius: 5px;">Simpliaxis HRMS Login</h3>
-        <form id="loginForm">
+        <form id="loginForm"  method="POST" action="{{ route('login') }}">
+            @csrf
             <div class="mb-3">
                 <label for="email" class="form-label">Email</label>
                 <input type="email" class="form-control" id="email" name="email" required>

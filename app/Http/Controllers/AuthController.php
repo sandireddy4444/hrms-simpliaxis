@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
@@ -10,7 +11,7 @@ class AuthController extends Controller
 {
     public function showLoginForm()
     {
-        return view('auth.login');
+        return view('auth.login'); // your blade file path
     }
 
 
@@ -50,3 +51,4 @@ class AuthController extends Controller
         return redirect('/login');
     }
 }
+    
