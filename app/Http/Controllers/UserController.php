@@ -12,7 +12,7 @@ class UserController extends Controller
 {
     public function index()
     {
-        return view('dashboard.index');
+        return view('users.index');
     }
 
     public function data()
