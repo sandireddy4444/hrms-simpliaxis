@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Simpliaxis HRMS - Login</title>
   
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -50,25 +51,42 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         $(document).ready(function() {
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+
             $('#loginForm').on('submit', function(e) {
                 e.preventDefault();
+                $('#errorMessage').hide().text('');
+
                 $.ajax({
                     url: '{{ route("login") }}',
                     method: 'POST',
                     data: {
                         email: $('#email').val(),
-                        password: $('#password').val(),
-                        _token: '{{ csrf_token() }}'
+                        password: $('#password').val()
                     },
                     success: function(response) {
                         if (response.success) {
                             window.location.href = response.redirect;
                         } else {
-                            $('#errorMessage').text(response.message).show();
+                            $('#errorMessage').text(response.message || 'Invalid credentials').show();
                         }
                     },
-                    error: function() {
-                        $('#errorMessage').text('An error occurred. Please try again.').show();
+                    error: function(xhr) {
+                        let message = 'An error occurred. Please try again.';
+                        if (xhr.status === 419) {
+                            message = 'Session expired. Please refresh the page and try again.';
+                        } else if (xhr.status === 422) {
+                            message = xhr.responseJSON.message || 'Invalid input data.';
+                        } else if (xhr.status === 401) {
+                            message = xhr.responseJSON.message || 'Invalid email or password.';
+                        } else if (xhr.status === 500) {
+                            message = xhr.responseJSON.message || 'Server error. Please contact the administrator.';
+                        }
+                        $('#errorMessage').text(message).show();
                     }
                 });
             });

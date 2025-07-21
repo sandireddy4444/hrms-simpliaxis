@@ -56,6 +56,8 @@
                             <option value="Admin">Admin</option>
                             <option value="SuperAdmin">SuperAdmin</option>
                             <option value="Employee">Employee</option>
+                            <option value="HR Manager">HR Manager</option>
+                            <option value="Department Manager">Department Manager</option>
                         </select>
                     </div>
                     <div id="edit_error" class="text-danger" style="display: none;"></div>

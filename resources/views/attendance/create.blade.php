@@ -83,7 +83,7 @@ $(document).ready(function() {
                 .text(message);
             setTimeout(() => {
                 $('#hoursNotification').addClass('d-none');
-            }, 6000);
+            }, 2000);
         }
     }
 
